@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 链接到你小皮面板的 MySQL，库名叫 exchange_db
+    url: jdbc:mysql://localhost:3306/exchange_db?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
+    username: root
+    password: root  # 小皮面板默认密码通常是 root
+
+mybatis:
+  # 告诉 MyBatis 你的 SQL 映射文件（XML）放在哪里
+  mapper-locations: classpath:mapper/*.xml
+
+# SpringDoc 基础配置
+springdoc:
+  api-docs:
+    path: /v3/api-docs # 内部规范生成的元数据路径，保持默认即可
+  packages-to-scan: com.exchange.controller # 极其重要：告诉它去扫描你写 UserController 的包
