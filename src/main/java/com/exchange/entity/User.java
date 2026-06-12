@@ -8,6 +8,7 @@ public class User {
     private String password;      // 登录密码
     private String nickname;      // 前台展示昵称
     private String contactInfo;   // 线下联系方式
+    private String profile;       // 个人简介，便于线下交换前了解用户
     private Integer role;         // 角色权限：0-普通会员，1-系统管理员
     private Integer status;       // 账号状态：1-正常，0-限制登录
     private LocalDateTime createTime; // 记录创建时间
@@ -30,6 +31,9 @@ public class User {
 
     public String getContactInfo() { return contactInfo; }
     public void setContactInfo(String contactInfo) { this.contactInfo = contactInfo; }
+
+    public String getProfile() { return profile; }
+    public void setProfile(String profile) { this.profile = profile; }
 
     public Integer getRole() { return role; }
     public void setRole(Integer role) { this.role = role; }

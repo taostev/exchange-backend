@@ -5,6 +5,8 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import java.util.List;
 
 @Mapper
@@ -34,4 +36,29 @@ public interface ItemMapper {
      */
     int selectItemCount(@Param("categoryId") Integer categoryId,
                         @Param("keyword") String keyword);
+
+    // 根据物品 ID 查询详情，详情页和订单校验都会使用。
+    Item selectById(Long itemId);
+
+    // 查询某个用户发布的全部物品，发起交换时用于选择自己的在架物品。
+    @Select("SELECT * FROM busi_item WHERE user_id = #{userId} ORDER BY update_time DESC")
+    List<Item> selectByUserId(Long userId);
+
+    // 普通上下架或管理员强制下架都通过状态字段控制展示。
+    @Update("UPDATE busi_item SET status = #{status}, update_time = NOW() WHERE item_id = #{itemId}")
+    int updateStatus(@Param("itemId") Long itemId, @Param("status") Integer status);
+
+    // 乐观锁：只有在架物品才能被锁定为交换中，防止多人同时抢同一件物品。
+    @Update("UPDATE busi_item SET status = 2, update_time = NOW() WHERE item_id = #{itemId} AND status = 1")
+    int lockAvailableItem(Long itemId);
+
+    // 订单完成或取消时批量恢复/结项物品状态。
+    @Update("UPDATE busi_item SET status = #{status}, update_time = NOW() WHERE item_id IN (#{firstItemId}, #{secondItemId})")
+    int updateTwoItemsStatus(@Param("firstItemId") Long firstItemId,
+                             @Param("secondItemId") Long secondItemId,
+                             @Param("status") Integer status);
+
+    // 后台统计当前在架物品数量。
+    @Select("SELECT COUNT(*) FROM busi_item WHERE status = 1")
+    int countAvailableItems();
 }

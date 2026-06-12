@@ -39,4 +39,8 @@
         <include refid="itemQueryCondition"/>
     </select>
 
+    <select id="selectById" resultMap="ItemResultMap">
+        SELECT * FROM busi_item WHERE item_id = #{itemId}
+    </select>
+
 </mapper>

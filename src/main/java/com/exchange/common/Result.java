@@ -23,6 +23,15 @@ public class Result<T> {
         return result;
     }
 
+    // 按指定业务状态码返回错误，主要用于 401 未登录、403 无权限等场景。
+    public static <T> Result<T> error(Integer code, String msg) {
+        Result<T> result = new Result<>();
+        result.setCode(code);
+        result.setMsg(msg);
+        result.setData(null);
+        return result;
+    }
+
     // Getters 和 Setters
     public Integer getCode() { return code; }
     public void setCode(Integer code) { this.code = code; }
