@@ -31,7 +31,6 @@ public class ExchangeOrderServiceImpl implements ExchangeOrderService {
     @Override
     @Transactional
     public Long create(Long userId, CreateOrderRequest request) {
-        // 发起交换前必须完善联系方式，支撑线下交换沟通。
         User user = userMapper.findById(userId);
         if (user == null || user.getContactInfo() == null || user.getContactInfo().isBlank()) {
             throw new BusinessException("请先完善联系方式后再发起交换");
@@ -59,13 +58,15 @@ public class ExchangeOrderServiceImpl implements ExchangeOrderService {
         order.setTargetItemId(targetItem.getItemId());
         order.setRemark(request.getRemark());
         order.setStatus(0);
+        order.setInitiatorConfirmed(false);
+        order.setTargetConfirmed(false);
         orderMapper.insert(order);
         return order.getOrderId();
     }
 
     @Override
     @Transactional
-    public boolean updateStatus(Long userId, Long orderId, String action) {
+    public String updateStatus(Long userId, Long orderId, String action) {
         ExchangeOrder order = orderMapper.selectById(orderId);
         if (order == null) {
             throw new BusinessException("订单不存在");
@@ -77,11 +78,14 @@ public class ExchangeOrderServiceImpl implements ExchangeOrderService {
         String normalized = action.toUpperCase();
         switch (normalized) {
             case "ACCEPT":
-                return accept(userId, order);
+                accept(userId, order);
+                return "已同意交换";
             case "REJECT":
-                return reject(userId, order);
+                reject(userId, order);
+                return "已拒绝交换";
             case "CANCEL":
-                return cancel(userId, order);
+                cancel(userId, order);
+                return "订单已取消";
             case "FINISH":
                 return finish(userId, order);
             default:
@@ -89,25 +93,25 @@ public class ExchangeOrderServiceImpl implements ExchangeOrderService {
         }
     }
 
-    private boolean accept(Long userId, ExchangeOrder order) {
-        // 只有目标物品主人可以同意交换。
+    private void accept(Long userId, ExchangeOrder order) {
         if (!order.getTargetId().equals(userId)) {
             throw new BusinessException(403, "只有接收方可以同意交换");
         }
         if (order.getStatus() != 0) {
             throw new BusinessException("只有待确认订单可以同意");
         }
-        // 乐观锁锁定两件物品，任意一件已被抢先锁定都会回滚。
         if (itemMapper.lockAvailableItem(order.getOfferItemId()) == 0 ||
                 itemMapper.lockAvailableItem(order.getTargetItemId()) == 0) {
             throw new BusinessException("物品已被他人预订");
         }
         order.setStatus(1);
+        order.setInitiatorConfirmed(false);
+        order.setTargetConfirmed(false);
         order.setFinishTime(null);
-        return orderMapper.updateStatus(order) > 0;
+        orderMapper.updateStatus(order);
     }
 
-    private boolean reject(Long userId, ExchangeOrder order) {
+    private void reject(Long userId, ExchangeOrder order) {
         if (!order.getTargetId().equals(userId)) {
             throw new BusinessException(403, "只有接收方可以拒绝交换");
         }
@@ -116,10 +120,10 @@ public class ExchangeOrderServiceImpl implements ExchangeOrderService {
         }
         order.setStatus(2);
         order.setFinishTime(LocalDateTime.now());
-        return orderMapper.updateStatus(order) > 0;
+        orderMapper.updateStatus(order);
     }
 
-    private boolean cancel(Long userId, ExchangeOrder order) {
+    private void cancel(Long userId, ExchangeOrder order) {
         if (!order.getInitiatorId().equals(userId) && !order.getTargetId().equals(userId)) {
             throw new BusinessException(403, "只能取消与自己相关的订单");
         }
@@ -128,21 +132,42 @@ public class ExchangeOrderServiceImpl implements ExchangeOrderService {
         }
         itemMapper.updateTwoItemsStatus(order.getOfferItemId(), order.getTargetItemId(), 1);
         order.setStatus(4);
+        order.setInitiatorConfirmed(false);
+        order.setTargetConfirmed(false);
         order.setFinishTime(LocalDateTime.now());
-        return orderMapper.updateStatus(order) > 0;
+        orderMapper.updateStatus(order);
     }
 
-    private boolean finish(Long userId, ExchangeOrder order) {
+    private String finish(Long userId, ExchangeOrder order) {
         if (!order.getInitiatorId().equals(userId) && !order.getTargetId().equals(userId)) {
             throw new BusinessException(403, "只能完成与自己相关的订单");
         }
         if (order.getStatus() != 1) {
             throw new BusinessException("只有交换中订单可以完成");
         }
-        itemMapper.updateTwoItemsStatus(order.getOfferItemId(), order.getTargetItemId(), 3);
-        order.setStatus(3);
-        order.setFinishTime(LocalDateTime.now());
-        return orderMapper.updateStatus(order) > 0;
+
+        if (order.getInitiatorId().equals(userId)) {
+            if (Boolean.TRUE.equals(order.getInitiatorConfirmed())) {
+                return "您已确认完成，等待对方确认";
+            }
+            order.setInitiatorConfirmed(true);
+        } else {
+            if (Boolean.TRUE.equals(order.getTargetConfirmed())) {
+                return "您已确认完成，等待对方确认";
+            }
+            order.setTargetConfirmed(true);
+        }
+
+        if (Boolean.TRUE.equals(order.getInitiatorConfirmed()) && Boolean.TRUE.equals(order.getTargetConfirmed())) {
+            itemMapper.updateTwoItemsStatus(order.getOfferItemId(), order.getTargetItemId(), 3);
+            order.setStatus(3);
+            order.setFinishTime(LocalDateTime.now());
+            orderMapper.updateStatus(order);
+            return "交换已完成";
+        }
+
+        orderMapper.updateConfirmFlags(order);
+        return "已确认完成，等待对方确认";
     }
 
     @Override

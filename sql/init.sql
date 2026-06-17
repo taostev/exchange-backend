@@ -1,4 +1,7 @@
--- exchange-backend 本地开发数据库初始化脚本
+-- exchange-backend 本地开发数据库初始化脚本（完整版）
+-- 使用方式：mysql -uroot -proot < sql/init.sql
+
+CREATE DATABASE IF NOT EXISTS exchange_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE exchange_db;
 
 CREATE TABLE IF NOT EXISTS sys_user (
@@ -7,6 +10,7 @@ CREATE TABLE IF NOT EXISTS sys_user (
     password     VARCHAR(128) NOT NULL COMMENT '登录密码',
     nickname     VARCHAR(64)  DEFAULT NULL COMMENT '前台展示昵称',
     contact_info VARCHAR(128) DEFAULT NULL COMMENT '线下联系方式',
+    profile      VARCHAR(255) DEFAULT NULL COMMENT '个人简介',
     role         TINYINT      NOT NULL DEFAULT 0 COMMENT '角色：0-普通会员，1-系统管理员',
     status       TINYINT      NOT NULL DEFAULT 1 COMMENT '账号状态：1-正常，0-限制登录',
     create_time  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -28,3 +32,47 @@ CREATE TABLE IF NOT EXISTS busi_item (
     KEY idx_user_id (user_id),
     KEY idx_category_status (category_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物品信息表';
+
+CREATE TABLE IF NOT EXISTS busi_exchange_order (
+    order_id             BIGINT      NOT NULL AUTO_INCREMENT COMMENT '意向订单唯一主键',
+    initiator_id         BIGINT      NOT NULL COMMENT '发起请求方用户ID',
+    target_id            BIGINT      NOT NULL COMMENT '目标物品主人ID',
+    offer_item_id        BIGINT      NOT NULL COMMENT '发起方愿意交换的物品ID',
+    target_item_id       BIGINT      NOT NULL COMMENT '发起方想换取的目标物品ID',
+    remark               VARCHAR(255) DEFAULT NULL COMMENT '交换备注',
+    status               TINYINT     NOT NULL DEFAULT 0 COMMENT '0-待确认,1-已同意,2-已拒绝,3-已完成,4-已取消',
+    initiator_confirmed  TINYINT     NOT NULL DEFAULT 0 COMMENT '发起方是否确认完成',
+    target_confirmed     TINYINT     NOT NULL DEFAULT 0 COMMENT '接收方是否确认完成',
+    create_time          DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '意向发起时间',
+    finish_time          DATETIME    DEFAULT NULL COMMENT '交易完成时间',
+    PRIMARY KEY (order_id),
+    KEY idx_initiator_id (initiator_id),
+    KEY idx_target_id (target_id),
+    KEY idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='交换意向订单表';
+
+CREATE TABLE IF NOT EXISTS sys_category (
+    category_id BIGINT      NOT NULL AUTO_INCREMENT COMMENT '分类ID',
+    parent_id   BIGINT      DEFAULT 0 COMMENT '父分类ID，0表示顶级分类',
+    name        VARCHAR(64) NOT NULL COMMENT '分类名称',
+    sort        INT         NOT NULL DEFAULT 0 COMMENT '排序值',
+    PRIMARY KEY (category_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物品分类字典表';
+
+CREATE TABLE IF NOT EXISTS user_favorite (
+    favorite_id BIGINT   NOT NULL AUTO_INCREMENT COMMENT '关注记录ID',
+    user_id     BIGINT   NOT NULL COMMENT '会员ID',
+    item_id     BIGINT   NOT NULL COMMENT '物品ID',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '关注时间',
+    PRIMARY KEY (favorite_id),
+    UNIQUE KEY uk_user_item (user_id, item_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='物品关注表';
+
+-- 默认分类（首次初始化时写入）
+INSERT IGNORE INTO sys_category (category_id, parent_id, name, sort) VALUES
+(1, 0, '数码', 1),
+(2, 0, '图书教材', 2),
+(3, 0, '生活用品', 3),
+(4, 0, '其他', 99);
+
+-- 管理员账号由应用启动时 DataInitializer 自动创建：admin / admin123

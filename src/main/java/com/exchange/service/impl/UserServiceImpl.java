@@ -52,6 +52,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean isUsernameAvailable(String username) {
+        if (username == null || username.isBlank()) {
+            return false;
+        }
+        return userMapper.findByUsername(username.trim()) == null;
+    }
+
+    @Override
     public User getById(Long userId) {
         User user = userMapper.findById(userId);
         if (user == null) {
@@ -63,7 +71,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean updateProfile(Long userId, User user) {
-        // 只允许修改个人资料字段，避免用户通过请求体篡改角色和账号状态。
+        if (user.getContactInfo() == null || user.getContactInfo().isBlank()) {
+            throw new BusinessException("联系方式不能为空");
+        }
         user.setId(userId);
         return userMapper.updateProfile(user) > 0;
     }

@@ -11,6 +11,9 @@ public interface UserService {
     // 处理用户登录业务
     User login(String username, String password);
 
+    // 注册前校验用户名是否可用
+    boolean isUsernameAvailable(String username);
+
     // 查询当前登录用户资料
     User getById(Long userId);
 

@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Tag(name = "用户核心模块", description = "负责处理用户的注册、登录以及鉴权相关的接口") // 标记分类说明
 @RestController
 @RequestMapping({"/api/user", "/user"})
@@ -33,6 +35,12 @@ public class UserController {
         } else {
             return Result.error("注册失败，用户名已存在");
         }
+    }
+
+    @Operation(summary = "用户名占用校验", description = "注册表单异步校验用户名是否可用")
+    @GetMapping("/check-username")
+    public Result<Map<String, Boolean>> checkUsername(@RequestParam String username) {
+        return Result.success(Map.of("available", userService.isUsernameAvailable(username)));
     }
 
     @Operation(summary = "用户登录接口", description = "根据账号密码进行比对，若账号被管理员封禁（status=0）则拒绝登录")

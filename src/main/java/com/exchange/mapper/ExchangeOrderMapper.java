@@ -27,8 +27,20 @@ public interface ExchangeOrderMapper {
     List<ExchangeOrder> selectAll();
 
     // 更新订单状态，完成/取消时写 finish_time。
-    @Update("UPDATE busi_exchange_order SET status = #{status}, finish_time = #{finishTime} WHERE order_id = #{orderId}")
+    @Update("UPDATE busi_exchange_order SET status = #{status}, finish_time = #{finishTime}, " +
+            "initiator_confirmed = #{initiatorConfirmed}, target_confirmed = #{targetConfirmed} " +
+            "WHERE order_id = #{orderId}")
     int updateStatus(ExchangeOrder order);
+
+    @Update("UPDATE busi_exchange_order SET initiator_confirmed = #{initiatorConfirmed}, target_confirmed = #{targetConfirmed} " +
+            "WHERE order_id = #{orderId}")
+    int updateConfirmFlags(ExchangeOrder order);
+
+    // 判断两位用户之间是否存在已同意或已完成的交换订单，用于决定是否展示联系方式。
+    @Select("SELECT COUNT(*) FROM busi_exchange_order " +
+            "WHERE status IN (1, 3) AND ((initiator_id = #{viewerId} AND target_id = #{publisherId}) " +
+            "OR (initiator_id = #{publisherId} AND target_id = #{viewerId}))")
+    int countAgreedOrderBetween(@Param("viewerId") Long viewerId, @Param("publisherId") Long publisherId);
 
     // 后台统计进行中的订单。
     @Select("SELECT COUNT(*) FROM busi_exchange_order WHERE status = 1")

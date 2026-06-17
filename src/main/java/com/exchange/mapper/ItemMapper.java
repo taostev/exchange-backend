@@ -44,6 +44,17 @@ public interface ItemMapper {
     @Select("SELECT * FROM busi_item WHERE user_id = #{userId} ORDER BY update_time DESC")
     List<Item> selectByUserId(Long userId);
 
+    @Select("SELECT * FROM busi_item WHERE user_id = #{userId} AND status = #{status} ORDER BY update_time DESC")
+    List<Item> selectByUserIdAndStatus(@Param("userId") Long userId, @Param("status") Integer status);
+
+    @Select("SELECT * FROM busi_item WHERE status = 1 AND user_id <> #{userId} AND category_id = #{categoryId} ORDER BY update_time DESC LIMIT #{limit}")
+    List<Item> selectRecommendByCategory(@Param("categoryId") Integer categoryId,
+                                         @Param("userId") Long userId,
+                                         @Param("limit") int limit);
+
+    @Select("SELECT * FROM busi_item WHERE status = 1 AND user_id <> #{userId} ORDER BY update_time DESC LIMIT #{limit}")
+    List<Item> selectRecommendFallback(@Param("userId") Long userId, @Param("limit") int limit);
+
     // 普通上下架或管理员强制下架都通过状态字段控制展示。
     @Update("UPDATE busi_item SET status = #{status}, update_time = NOW() WHERE item_id = #{itemId}")
     int updateStatus(@Param("itemId") Long itemId, @Param("status") Integer status);
@@ -53,7 +64,7 @@ public interface ItemMapper {
     int lockAvailableItem(Long itemId);
 
     // 订单完成或取消时批量恢复/结项物品状态。
-    @Update("UPDATE busi_item SET status = #{status}, update_time = NOW() WHERE item_id IN (#{firstItemId}, #{secondItemId})")
+    @Update("UPDATE busi_item SET status = #{status}, update_time = NOW() WHERE item_id = #{firstItemId} OR item_id = #{secondItemId}")
     int updateTwoItemsStatus(@Param("firstItemId") Long firstItemId,
                              @Param("secondItemId") Long secondItemId,
                              @Param("status") Integer status);

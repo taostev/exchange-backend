@@ -28,4 +28,10 @@ public interface CategoryMapper {
     // 校验分类下是否存在物品，存在则拒绝删除。
     @Select("SELECT COUNT(*) FROM busi_item WHERE category_id = #{categoryId}")
     int countItems(Long categoryId);
+
+    @Select("SELECT * FROM sys_category WHERE name = #{name} LIMIT 1")
+    Category findByName(String name);
+
+    @Update("UPDATE busi_item SET category_id = #{targetCategoryId}, update_time = NOW() WHERE category_id = #{sourceCategoryId}")
+    int transferItems(@Param("sourceCategoryId") Long sourceCategoryId, @Param("targetCategoryId") Long targetCategoryId);
 }

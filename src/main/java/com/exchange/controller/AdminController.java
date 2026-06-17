@@ -106,12 +106,27 @@ public class AdminController {
         return Result.success("分类更新成功");
     }
 
-    @Operation(summary = "删除分类", description = "分类下存在物品时禁止删除")
+    @Operation(summary = "删除分类", description = "分类下存在物品时自动转移到「其他」分类")
     @DeleteMapping("/categories/{categoryId}")
     public Result<String> deleteCategory(@PathVariable Long categoryId) {
         requireAdmin();
+        Category category = categoryMapper.selectAll().stream()
+                .filter(item -> item.getCategoryId().equals(categoryId))
+                .findFirst()
+                .orElse(null);
+        if (category == null) {
+            throw new BusinessException("分类不存在");
+        }
+        if ("其他".equals(category.getName())) {
+            throw new BusinessException("「其他」分类不能删除");
+        }
+
+        Category otherCategory = categoryMapper.findByName("其他");
+        if (otherCategory == null) {
+            throw new BusinessException("请先创建「其他」分类");
+        }
         if (categoryMapper.countItems(categoryId) > 0) {
-            throw new BusinessException("该分类下仍有物品，不能删除");
+            categoryMapper.transferItems(categoryId, otherCategory.getCategoryId());
         }
         categoryMapper.delete(categoryId);
         return Result.success("分类删除成功");

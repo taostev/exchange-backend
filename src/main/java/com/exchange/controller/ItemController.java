@@ -1,12 +1,16 @@
 package com.exchange.controller;
 
 import com.exchange.common.AuthContext;
+import com.exchange.common.AuthTokenSupport;
 import com.exchange.common.BusinessException;
 import com.exchange.common.Result;
+import com.exchange.dto.PublisherVO;
 import com.exchange.entity.Item;
+import com.exchange.service.ItemPublisherService;
 import com.exchange.service.ItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +26,9 @@ public class ItemController {
 
     @Autowired
     private ItemService itemService;
+
+    @Autowired
+    private ItemPublisherService itemPublisherService;
 
     @Operation(summary = "发布二手物品", description = "会员填写标题、描述、分类和交换意向后发布物品")
     @PostMapping
@@ -45,10 +52,21 @@ public class ItemController {
         return Result.success(itemService.getDetail(itemId));
     }
 
-    @Operation(summary = "我的物品列表", description = "查询当前登录会员发布的所有物品")
+    @Operation(summary = "发布者信息", description = "游客仅看昵称；订单已同意后双方可见联系方式")
+    @GetMapping("/{itemId}/publisher")
+    public Result<PublisherVO> publisher(@PathVariable Long itemId, HttpServletRequest request) {
+        try {
+            AuthTokenSupport.bindOptionalUser(request);
+            return Result.success(itemPublisherService.getPublisher(itemId, AuthContext.getUserId()));
+        } finally {
+            AuthContext.clear();
+        }
+    }
+
+    @Operation(summary = "我的物品列表", description = "查询当前登录会员发布的物品，可按 status 过滤")
     @GetMapping("/mine")
-    public Result<?> mine() {
-        return Result.success(itemService.listMyItems(AuthContext.getUserId()));
+    public Result<?> mine(@RequestParam(required = false) Integer status) {
+        return Result.success(itemService.listMyItems(AuthContext.getUserId(), status));
     }
 
     @Operation(summary = "修改物品状态", description = "发布者可上下架自己的物品，管理员可强制下架")

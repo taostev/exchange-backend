@@ -14,8 +14,8 @@ public interface ItemService {
     // 查询物品详情
     Item getDetail(Long itemId);
 
-    // 查询当前用户发布的物品
-    List<Item> listMyItems(Long userId);
+    // 查询当前用户发布的物品，可按状态过滤
+    List<Item> listMyItems(Long userId, Integer status);
 
     // 发布者或管理员修改物品状态
     boolean updateStatus(Long currentUserId, boolean admin, Long itemId, Integer status);

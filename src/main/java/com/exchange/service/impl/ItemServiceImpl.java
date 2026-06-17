@@ -26,8 +26,25 @@ public class ItemServiceImpl implements ItemService {
         if (item.getExchangeWish() == null || item.getExchangeWish().isBlank()) {
             throw new BusinessException("交换意向说明不能为空");
         }
-        item.setStatus(1); // 详细设计书规定：发布后默认状态为 1-在架
+        validateImages(item.getImages());
+        item.setStatus(1);
         return itemMapper.insertItem(item) > 0;
+    }
+
+    private void validateImages(String images) {
+        if (images == null || images.isBlank()) {
+            return;
+        }
+        String[] parts = images.split(",");
+        int count = 0;
+        for (String part : parts) {
+            if (!part.isBlank()) {
+                count++;
+            }
+        }
+        if (count > 5) {
+            throw new BusinessException("物品图片最多上传 5 张");
+        }
     }
 
     @Override
@@ -59,8 +76,11 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public List<Item> listMyItems(Long userId) {
-        return itemMapper.selectByUserId(userId);
+    public List<Item> listMyItems(Long userId, Integer status) {
+        if (status == null) {
+            return itemMapper.selectByUserId(userId);
+        }
+        return itemMapper.selectByUserIdAndStatus(userId, status);
     }
 
     @Override
