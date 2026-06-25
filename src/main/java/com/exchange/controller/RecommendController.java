@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-@Tag(name = "推荐模块", description = "游客看热门推荐，登录用户看个性化推荐")
+@Tag(name = "推荐模块", description = "LLM 智能推荐，超时或未配置时降级为规则/热门推荐")
 @RestController
 @RequestMapping("/api/recommend")
 public class RecommendController {
@@ -22,7 +22,7 @@ public class RecommendController {
     @Autowired
     private RecommendService recommendService;
 
-    @Operation(summary = "推荐物品", description = "登录用户按收藏/发布分类推荐，游客返回最新在架物品")
+    @Operation(summary = "推荐物品", description = "登录用户优先走 LLM 智能推荐；游客返回热门；失败时降级")
     @GetMapping
     public Result<Map<String, Object>> recommend(HttpServletRequest request) {
         try {

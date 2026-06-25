@@ -1,0 +1,17 @@
+# 可选：复制为 application-local.yaml 覆盖下方配置
+exchange:
+  recommend:
+    llm:
+      provider: gemini
+      api-key: your-gemini-api-key
+      base-url: https://generativelanguage.googleapis.com
+      model: gemini-2.0-flash
+
+# 若改用 DeepSeek / OpenAI 兼容接口：
+# exchange:
+#   recommend:
+#     llm:
+#       provider: openai
+#       api-key: sk-xxxx
+#       base-url: https://api.deepseek.com
+#       model: deepseek-chat

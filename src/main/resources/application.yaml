@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  config:
+    import: optional:classpath:application-local.yaml
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     # 链接到你小皮面板的 MySQL，库名叫 exchange_db
@@ -25,3 +27,16 @@ springdoc:
   api-docs:
     path: /v3/api-docs # 内部规范生成的元数据路径，保持默认即可
   packages-to-scan: com.exchange.controller # 极其重要：告诉它去扫描你写 UserController 的包
+
+# LLM 智能推荐（默认 Google Gemini，可切换为 openai 兼容接口）
+exchange:
+  recommend:
+    llm:
+      enabled: true
+      provider: gemini
+      api-key: AIzaSyB4pBkqdW4oXbdtwcrxL6EuMwEeM6HaWD8
+      base-url: https://generativelanguage.googleapis.com
+      model: gemini-2.0-flash
+      timeout-ms: 5000
+      candidate-pool-size: 30
+      result-size: 3

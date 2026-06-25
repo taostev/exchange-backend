@@ -55,6 +55,15 @@ public interface ItemMapper {
     @Select("SELECT * FROM busi_item WHERE status = 1 AND user_id <> #{userId} ORDER BY update_time DESC LIMIT #{limit}")
     List<Item> selectRecommendFallback(@Param("userId") Long userId, @Param("limit") int limit);
 
+    @Select("SELECT * FROM busi_item WHERE status = 1 AND user_id <> #{userId} ORDER BY update_time DESC LIMIT #{limit}")
+    List<Item> selectRecommendPool(@Param("userId") Long userId, @Param("limit") int limit);
+
+    @Select("<script>"
+            + "SELECT * FROM busi_item WHERE status = 1 AND item_id IN "
+            + "<foreach collection='ids' item='id' open='(' separator=',' close=')'>#{id}</foreach>"
+            + "</script>")
+    List<Item> selectAvailableByIds(@Param("ids") List<Long> ids);
+
     // 普通上下架或管理员强制下架都通过状态字段控制展示。
     @Update("UPDATE busi_item SET status = #{status}, update_time = NOW() WHERE item_id = #{itemId}")
     int updateStatus(@Param("itemId") Long itemId, @Param("status") Integer status);
