@@ -16,7 +16,7 @@ import java.util.Map;
 
 @Tag(name = "用户核心模块", description = "负责处理用户的注册、登录以及鉴权相关的接口") // 标记分类说明
 @RestController
-@RequestMapping({"/api/user", "/user"})
+@RequestMapping("/api/user")
 public class UserController {
 
     @Autowired

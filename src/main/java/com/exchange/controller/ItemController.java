@@ -15,7 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.UUID;
 
@@ -91,16 +94,15 @@ public class ItemController {
             throw new BusinessException("仅支持 JPG/PNG 图片");
         }
         try {
-            File uploadDir = new File("uploads/item");
-            if (!uploadDir.exists() && !uploadDir.mkdirs()) {
-                throw new BusinessException("上传目录创建失败");
-            }
+            Path uploadDir = Paths.get("uploads", "item").toAbsolutePath();
+            Files.createDirectories(uploadDir);
             String filename = UUID.randomUUID() + "." + suffix;
-            file.transferTo(new File(uploadDir, filename));
+            Path dest = uploadDir.resolve(filename);
+            file.transferTo(dest);
             return Result.success("/uploads/item/" + filename);
         } catch (BusinessException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new BusinessException("图片上传失败");
         }
     }
